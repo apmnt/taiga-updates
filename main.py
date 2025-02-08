@@ -20,7 +20,6 @@ def get():
         node = product["node"]
         title = node["title"]
         price = node["priceRange"]["minVariantPrice"]["amount"]
-        currency = node["priceRange"]["minVariantPrice"]["currencyCode"]
         image_url = (
             node["featuredImage"]["originalSrc"] if node.get("featuredImage") else ""
         )
@@ -91,6 +90,19 @@ def get():
             description="A simple clone of the Taiga Takahashi website, showing a quick overview of the stocked items.",
             image="https://cdn.sanity.io/images/74v34t5m/production/edbf98b124e66f73c8c8eea6e32a098af6992e27-4597x2442.jpg?w=1024&h=544&auto=format",
             url="https://taiga-updates.vercel.app",
+        ),
+        P(
+            "T.T stock status",
+            style="text-align:center; margin:0px 0; font-size:36px;",
+        ),
+        P(
+            "made by ",
+            A(
+                "apmnt",
+                href="https://github.com/apmnt",
+                style="color: inherit; text-decoration: underline;",
+            ),
+            style="text-align:center; margin:5px 5px; font-size:18px;",
         ),
         Container(
             *product_cards,
