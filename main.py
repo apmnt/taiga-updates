@@ -48,54 +48,66 @@ def render_header(change_view_href):
     )
 
 
+def extract_product_info(node):
+    return {
+        "title": node["title"],
+        "price": node["priceRange"]["minVariantPrice"]["amount"],
+        "url": f"https://taigatakahashi.com/products/{node['handle']}/",
+        "src": (
+            node["featuredImage"]["originalSrc"] if node.get("featuredImage") else ""
+        ),
+        "sizes": [
+            {
+                "size": size,
+                "quantity": next(
+                    (
+                        variant["node"]["quantityAvailable"]
+                        for variant in node["variants"]["edges"]
+                        if variant["node"]["selectedOptions"][0]["value"] == size
+                    ),
+                    0,
+                ),
+            }
+            for option in node["options"]
+            if option["name"] == "SIZE"
+            for size in option["values"]
+        ],
+        "color": next(
+            (
+                option["values"][0]
+                for option in node["options"]
+                if option["name"] == "COLOR"
+            ),
+            "",
+        ),
+    }
+
+
 @rt("/")
 def get():
     product_cards = []
 
     for product in products:
         node = product["node"]
-        title = node["title"]
-        price = node["priceRange"]["minVariantPrice"]["amount"]
-        # Build gallery: use featuredImage plus additionalImages if available
-        gallery = []
-        if node.get("featuredImage"):
-            gallery.append(node["featuredImage"]["originalSrc"])
-        if node.get("additionalImages"):
-            for img in node["additionalImages"]:
-                gallery.append(img["originalSrc"])
+        info = extract_product_info(node)
 
-        # Create image content: a single image
         image_content = Img(
-            src=gallery[0] if gallery else "",
-            alt=title,
+            src=info["src"],
+            alt=info["title"],
             style="width:100%; height:auto;",
         )
 
-        # Process sizes and available inventory and build spans
-        size_spans = []
-        for option in node["options"]:
-            if option["name"] == "SIZE":
-                for size in option["values"]:
-                    quantity = next(
-                        (
-                            variant["node"]["quantityAvailable"]
-                            for variant in node["variants"]["edges"]
-                            if variant["node"]["selectedOptions"][0]["value"] == size
-                        ),
-                        0,
-                    )
-                    text_color = "black" if quantity > 0 else "rgb(189,188,183)"
-                    size_spans.append(
-                        Span(
-                            f"{size}",
-                            style=f"color: {text_color}; margin-right: 5px;",
-                        )
-                    )
+        size_spans = [
+            Span(
+                f"{size_info['size']}",
+                style=f"color: {'black' if size_info['quantity'] > 0 else 'rgb(189,188,183)'}; margin-right: 5px;",
+            )
+            for size_info in info["sizes"]
+        ]
 
-        # Build a container for price and sizes, aligned appropriately
         price_sizes = Div(
             P(
-                f"¥{float(price):,.0f}",
+                f"¥{float(info['price']):,.0f}",
                 style="margin:0; color: black;",
             ),
             P(
@@ -105,24 +117,19 @@ def get():
             style="display:flex; justify-content: space-between; align-items: center; width:100%;",
         )
 
-        # Use the product's handle to create a product URL link.
-        product_url = f"https://taigatakahashi.com/products/{node['handle']}/"
-
-        # Wrap only the image and title in an anchor element linking to the corresponding product page.
         image_link = A(
             image_content,
-            href=product_url,
+            href=info["url"],
             target="_blank",
             style="text-decoration: none; color: black;",
         )
         title_link = A(
-            f"{title}",
-            href=product_url,
+            f"{info['title']}",
+            href=info["url"],
             target="_blank",
             style="text-decoration: none; color: black;",
         )
 
-        # Build the product card. Only the image and title are clickable.
         product_cards.append(
             Card(
                 Group(
@@ -156,34 +163,14 @@ def spreadsheet_view():
 
     for product in products:
         node = product["node"]
-        title = node["title"]
-        price = node["priceRange"]["minVariantPrice"]["amount"]
-        product_url = f"https://taigatakahashi.com/products/{node['handle']}/"
+        info = extract_product_info(node)
 
-        # Extract color
-        color = next(
-            (
-                option["values"][0]
-                for option in node["options"]
-                if option["name"] == "COLOR"
-            ),
-            "",
-        )
+        title_with_color = f"{info['title']} ({info['color']})"
 
-        # Append color to title
-        title_with_color = f"{title} ({color})"
-
-        # Extract sizes that are in stock
         sizes = ", ".join(
-            size
-            for option in node["options"]
-            if option["name"] == "SIZE"
-            for size in option["values"]
-            if any(
-                variant["node"]["selectedOptions"][0]["value"] == size
-                and variant["node"]["quantityAvailable"] > 0
-                for variant in node["variants"]["edges"]
-            )
+            size_info["size"]
+            for size_info in info["sizes"]
+            if size_info["quantity"] > 0
         )
 
         table_rows.append(
@@ -191,13 +178,13 @@ def spreadsheet_view():
                 Td(
                     A(
                         title_with_color,
-                        href=product_url,
+                        href=info["url"],
                         target="_blank",
                         style="text-decoration: none; color: black;",
                     )
                 ),
                 Td(sizes),
-                Td(f"¥{float(price):,.0f}"),
+                Td(f"¥{float(info['price']):,.0f}"),
             )
         )
 
