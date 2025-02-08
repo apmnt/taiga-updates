@@ -1,0 +1,13 @@
+@font-face {
+  font-family: "TT Contrast";
+  src: url("https://taigatakahashi.com/fonts/TTContrast-Regular.woff2")
+    format("woff2");
+  font-weight: normal;
+  font-style: normal;
+}
+
+body {
+  font-family: "TT Contrast", sans-serif;
+  font-weight: 400;
+  background-color: rgb(252 250 245);
+}
