@@ -108,7 +108,10 @@ def get():
         Socials(
             title="Taiga Takahashi stock status",
             site_name="Vercel",
-            description="A simple clone of the Taiga Takahashi website, showing a quick overview of the stocked items.",
+            description="A simple FastHTML clone of the Taiga Takahashi website, showing a quick overview of the stocked items.",
+            w=1024,
+            h=544,
+            creator="apmnt",
             image="https://cdn.sanity.io/images/74v34t5m/production/edbf98b124e66f73c8c8eea6e32a098af6992e27-4597x2442.jpg?w=1024&h=544&auto=format",
             url="https://taiga-updates.vercel.app",
         ),
