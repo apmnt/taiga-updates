@@ -12,6 +12,42 @@ data = response.json()
 products = data["result"]["serverData"]["data"]["collection"]["products"]["edges"]
 
 
+def render_header(change_view_href, maker_margin="8px 5px"):
+    return (
+        Socials(
+            title="Taiga Takahashi stock status",
+            site_name="Vercel",
+            description="A simple FastHTML clone of the Taiga Takahashi website, showing a quick overview of the stocked items.",
+            w=1024,
+            h=544,
+            creator="apmnt",
+            image="https://cdn.sanity.io/images/74v34t5m/production/edbf98b124e66f73c8c8eea6e32a098af6992e27-4597x2442.jpg?w=1024&h=544&auto=format",
+            url="https://taiga-updates.vercel.app",
+        ),
+        P(
+            "T.T stock status",
+            style="text-align:center; margin:0px 0; font-size:36px;",
+        ),
+        P(
+            "made by ",
+            A(
+                "apmnt",
+                href="https://github.com/apmnt",
+                style="color: inherit; text-decoration: underline;",
+            ),
+            style=f"text-align:center; margin:{maker_margin}; font-size:24px;",
+        ),
+        Div(
+            A(
+                "Change view",
+                href=change_view_href,
+                style="text-decoration: underline; color: inherit;",
+            ),
+            style="text-align: center; padding-bottom: 20px",
+        ),
+    )
+
+
 @rt("/")
 def get():
     product_cards = []
@@ -102,34 +138,7 @@ def get():
         )
 
     return (
-        Socials(
-            title="Taiga Takahashi stock status",
-            site_name="Vercel",
-            description="A simple FastHTML clone of the Taiga Takahashi website, showing a quick overview of the stocked items.",
-            w=1024,
-            h=544,
-            creator="apmnt",
-            image="https://cdn.sanity.io/images/74v34t5m/production/edbf98b124e66f73c8c8eea6e32a098af6992e27-4597x2442.jpg?w=1024&h=544&auto=format",
-            url="https://taiga-updates.vercel.app",
-        ),
-        P(
-            "T.T stock status",
-            style="text-align:center; margin:0px 0; font-size:36px;",
-        ),
-        P(
-            "made by ",
-            A(
-                "apmnt",
-                href="https://github.com/apmnt",
-                style="color: inherit; text-decoration: underline;",
-            ),
-            style="text-align:center; margin:5px 5px; font-size:24px;",
-        ),
-        A(
-            "Change view",
-            href="/spreadsheet",
-            style="display: block; margin: 20px 0; padding-left: 10px; text-decoration: underline; color: inherit;",
-        ),
+        *render_header(change_view_href="/spreadsheet"),
         Container(
             *product_cards,
             style="display: grid; gap: 16px; padding: 10px; grid-template-columns: repeat(auto-fit, minmax(300px, 2fr));",
@@ -193,34 +202,7 @@ def spreadsheet_view():
         )
 
     return Div(
-        Socials(
-            title="Taiga Takahashi stock status",
-            site_name="Vercel",
-            description="A simple FastHTML clone of the Taiga Takahashi website, showing a quick overview of the stocked items.",
-            w=1024,
-            h=544,
-            creator="apmnt",
-            image="https://cdn.sanity.io/images/74v34t5m/production/edbf98b124e66f73c8c8eea6e32a098af6992e27-4597x2442.jpg?w=1024&h=544&auto=format",
-            url="https://taiga-updates.vercel.app",
-        ),
-        P(
-            "T.T stock status",
-            style="text-align:center; margin:0px 0; font-size:36px;",
-        ),
-        P(
-            "made by ",
-            A(
-                "apmnt",
-                href="https://github.com/apmnt",
-                style="color: inherit; text-decoration: underline;",
-            ),
-            style="text-align:center; margin:5px 5px; font-size:24px;",
-        ),
-        A(
-            "Change view",
-            href="/",
-            style="display: block; margin: 20px 0; padding-left: 10px; text-decoration: underline; color: inherit;",
-        ),
+        *render_header(change_view_href="/"),
         Table(
             Tr(
                 Th("Title", style="min-width: 100px;"),
