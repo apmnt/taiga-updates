@@ -28,6 +28,10 @@ table th {
   color: black;
 }
 
+table td {
+  min-width: 100px;
+}
+
 @media (min-width: 1024px) {
   body {
     font-size: 20px;
