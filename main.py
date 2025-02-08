@@ -213,6 +213,61 @@ def create_product_card(info):
     )
 
 
+def create_small_product_card(info):
+    # Render a card with a small image on the left and details on the right
+    image_content = Img(
+        src=info["src"],
+        alt=info["title"],
+        style="width:auto; height:150px; margin-right: 10px;",
+    )
+
+    size_spans = [
+        Span(
+            f"{size_info['size']}",
+            style=f"color: {'black' if size_info['quantity'] > 0 else 'rgb(189,188,183)'}; margin-right: 5px;",
+        )
+        for size_info in info["sizes"]
+    ]
+
+    sizes_colour_price = Div(
+        P(
+            *size_spans,
+            style="margin:0; color: black;",
+        ),
+        P(
+            f"{info['color']}",
+            style="margin:0; color:black;",
+        ),
+        P(
+            f"¥{float(info['price']):,.0f}",
+            style="margin:0; color: black;",
+        ),
+        style="",
+    )
+
+    text_content = Div(
+        P(
+            A(
+                info["title"],
+                href=info["url"],
+                target="_blank",
+                style="text-decoration: none; color: black; font-size: 18px;",
+            ),
+            style="margin: 0;",
+        ),
+        *sizes_colour_price,
+        style="display:flex; flex-direction: column; justify-content: start; height: 150px;",  # Set the height to match the image
+    )
+    return Card(
+        Div(
+            image_content,
+            text_content,
+            style="display:flex; align-items:center;",
+        ),
+        style="text-align:left; padding:10px; margin:0; background:inherit; box-shadow:none; border:none; height: 100%;",
+    )
+
+
 def create_table_row(info, show_quantity=False):
     title_with_color = f"{info['title']} ({info['color']})"
     sizes = ", ".join(
@@ -240,23 +295,43 @@ def create_table_row(info, show_quantity=False):
 
 
 @rt("/{col}")
-def get(col: str):
-
+def get(col: str, small: str = "false"):
     if col == "":
         col = "lot-7-denim"
 
+    # Determine which view to use based on the query parameter
+    small_bool = small.lower() == "true"
+    toggle_href = f"/{col}?small={'false' if small_bool else 'true'}"
+    toggle_text = "Large images" if small_bool else "Small images"
+
     products = get_products(col)
 
+    # Use the corresponding card creator
     product_cards = [
-        create_product_card(extract_product_info(product["node"]))
+        (create_small_product_card if small_bool else create_product_card)(
+            extract_product_info(product["node"])
+        )
         for product in products
     ]
 
     return (
         *render_header(change_view_href=f"/spreadsheet/{col}", selected_collection=col),
+        # Toggle for card view version
+        Div(
+            A(
+                toggle_text,
+                href=toggle_href,
+                style="text-decoration: underline; color: black;",
+            ),
+            style="text-align: center; margin-bottom: 10px;",
+        ),
         Container(
             *product_cards,
-            style="display: grid; gap: 16px; padding: 10px; grid-template-columns: repeat(auto-fit, minmax(300px, 2fr));",
+            style=(
+                "display: grid; gap: 16px; padding: 10px; grid-template-columns: repeat(auto-fit, minmax(300px, 2fr));"
+                if not small_bool
+                else "display: flex; flex-direction: column; gap: 16px; padding: 10px;"
+            ),
         ),
         Link(
             rel="stylesheet",
@@ -267,7 +342,7 @@ def get(col: str):
 
 @rt("/spreadsheet/{col}")
 def spreadsheet_view(col: str, show_qty: str = "false"):
-    if col is "":
+    if col == "":
         col = "lot-7-denim"
     show_qty_bool = show_qty.lower() == "true"
     products = get_products(col)
