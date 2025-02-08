@@ -11,3 +11,9 @@ body {
   font-weight: 400;
   background-color: rgb(252 250 245);
 }
+
+table,
+table td,
+table th {
+  background-color: rgb(252 250 245) !important;
+}
