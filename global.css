@@ -23,7 +23,8 @@ body {
 table,
 table td,
 table th {
-  background-color: rgb(252 250 245) !important;
+  background-color: rgb(252 250 245);
+  color: black;
 }
 
 @media (min-width: 1024px) {
