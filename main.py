@@ -14,6 +14,7 @@ products = data["result"]["serverData"]["data"]["collection"]["products"]["edges
 
 def render_header(change_view_href):
     return (
+        Title("Taiga Stock Status"),
         Socials(
             title="Taiga Takahashi stock status",
             site_name="Vercel",
