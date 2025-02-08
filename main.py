@@ -20,8 +20,19 @@ def get():
         node = product["node"]
         title = node["title"]
         price = node["priceRange"]["minVariantPrice"]["amount"]
-        image_url = (
-            node["featuredImage"]["originalSrc"] if node.get("featuredImage") else ""
+        # Build gallery: use featuredImage plus additionalImages if available
+        gallery = []
+        if node.get("featuredImage"):
+            gallery.append(node["featuredImage"]["originalSrc"])
+        if node.get("additionalImages"):
+            for img in node["additionalImages"]:
+                gallery.append(img["originalSrc"])
+
+        # Create image content: a single image
+        image_content = Img(
+            src=gallery[0] if gallery else "",
+            alt=title,
+            style="width:100%; height:auto;",
         )
 
         # Process sizes and available inventory and build spans
@@ -58,21 +69,31 @@ def get():
             style="display:flex; justify-content: space-between; align-items: center; width:100%;",
         )
 
+        # Use the product's handle to create a product URL link.
+        product_url = f"https://taigatakahashi.com/products/{node['handle']}/"
+
+        # Wrap only the image and title in an anchor element linking to the corresponding product page.
+        image_link = A(
+            image_content,
+            href=product_url,
+            target="_blank",
+            style="text-decoration: none; color: inherit;",
+        )
+        title_link = A(
+            f"{title}",
+            href=product_url,
+            target="_blank",
+            style="text-decoration: none; color: inherit;",
+        )
+
+        # Build the product card. Only the image and title are clickable.
         product_cards.append(
             Card(
                 Group(
                     (
-                        (
-                            Img(
-                                src=image_url,
-                                alt=title,
-                                style="width:100%; height:auto;",
-                            )
-                            if image_url
-                            else ""
-                        ),
+                        image_link,
                         P(
-                            f"{title}",
+                            title_link,
                             style="font-size:18px;",
                         ),
                         price_sizes,
@@ -102,7 +123,7 @@ def get():
                 href="https://github.com/apmnt",
                 style="color: inherit; text-decoration: underline;",
             ),
-            style="text-align:center; margin:5px 5px; font-size:18px;",
+            style="text-align:center; margin:5px 5px; font-size:24px;",
         ),
         Container(
             *product_cards,
