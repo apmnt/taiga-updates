@@ -106,7 +106,7 @@ def extract_product_info(node):
                 ),
             }
             for option in node["options"]
-            if option["name"] == "SIZE"
+            if option["name"].lower() == "size"
             for size in option["values"]
         ],
         "color": next(
