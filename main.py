@@ -113,7 +113,7 @@ def extract_product_info(node):
             (
                 option["values"][0]
                 for option in node["options"]
-                if option["name"] == "COLOR"
+                if option["name"].lower() == "color"
             ),
             "",
         ),
