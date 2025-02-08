@@ -110,7 +110,7 @@ def render_header(change_view_href, selected_collection):
         # Add collection dropdown
         Div(
             Label(
-                "Collection:",
+                "",
                 for_="collection",
                 style="padding-right: 10px; color: black;",
             ),
@@ -120,7 +120,7 @@ def render_header(change_view_href, selected_collection):
                 onchange="location = this.value;",
                 style="margin: 0; display: inline-block; max-width: 200px;",
             ),
-            style="display: flex; flex-direction: row; justify-content: space-between; align-items: center; padding: 10px;",
+            style="display: flex; flex-direction: row; justify-content: space-between; align-items: center; padding: 10px; max-width: 1450px; margin: 0 auto;",
         ),
     )
 
