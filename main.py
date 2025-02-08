@@ -187,12 +187,12 @@ def spreadsheet_view():
         *render_header(change_view_href="/"),
         Table(
             Tr(
-                Th("Title", style="min-width: 100px;"),
-                Th("Sizes", style="min-width: 100px;"),
-                Th("Price", style="min-width: 100px;"),
+                Th("Title", className="th"),
+                Th("Sizes", className="th"),
+                Th("Price", className="th"),
             ),
             *table_rows,
-            style="width: 100%; border-collapse: collapse;",
+            className="table",
         ),
         Link(
             rel="stylesheet",
