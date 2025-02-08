@@ -128,9 +128,110 @@ def get():
             ),
             style="text-align:center; margin:5px 5px; font-size:24px;",
         ),
+        A(
+            "Spreadsheet view",
+            href="/",
+            style="display: block; margin: 20px 0; padding-left: 10px; font-size: 18px; text-decoration: underline; color: inherit;",
+        ),
         Container(
             *product_cards,
             style="display: grid; gap: 16px; padding: 10px; grid-template-columns: repeat(auto-fit, minmax(300px, 2fr));",
+        ),
+        Link(
+            rel="stylesheet",
+            href="./global.css",
+        ),
+    )
+
+
+@rt("/spreadsheet")
+def spreadsheet_view():
+    table_rows = []
+
+    for product in products:
+        node = product["node"]
+        title = node["title"]
+        price = node["priceRange"]["minVariantPrice"]["amount"]
+        product_url = f"https://taigatakahashi.com/products/{node['handle']}/"
+
+        # Extract color
+        color = next(
+            (
+                option["values"][0]
+                for option in node["options"]
+                if option["name"] == "COLOR"
+            ),
+            "",
+        )
+
+        # Append color to title
+        title_with_color = f"{title} ({color})"
+
+        # Extract sizes that are in stock
+        sizes = ", ".join(
+            size
+            for option in node["options"]
+            if option["name"] == "SIZE"
+            for size in option["values"]
+            if any(
+                variant["node"]["selectedOptions"][0]["value"] == size
+                and variant["node"]["quantityAvailable"] > 0
+                for variant in node["variants"]["edges"]
+            )
+        )
+
+        table_rows.append(
+            Tr(
+                Td(
+                    A(
+                        title_with_color,
+                        href=product_url,
+                        target="_blank",
+                        style="text-decoration: none; color: inherit;",
+                    )
+                ),
+                Td(sizes),
+                Td(f"¥{float(price):,.0f}"),
+            )
+        )
+
+    return Div(
+        Socials(
+            title="Taiga Takahashi stock status",
+            site_name="Vercel",
+            description="A simple FastHTML clone of the Taiga Takahashi website, showing a quick overview of the stocked items.",
+            w=1024,
+            h=544,
+            creator="apmnt",
+            image="https://cdn.sanity.io/images/74v34t5m/production/edbf98b124e66f73c8c8eea6e32a098af6992e27-4597x2442.jpg?w=1024&h=544&auto=format",
+            url="https://taiga-updates.vercel.app",
+        ),
+        P(
+            "T.T stock status",
+            style="text-align:center; margin:0px 0; font-size:36px;",
+        ),
+        P(
+            "made by ",
+            A(
+                "apmnt",
+                href="https://github.com/apmnt",
+                style="color: inherit; text-decoration: underline;",
+            ),
+            style="text-align:center; margin:5px 5px; font-size:24px;",
+        ),
+        A(
+            "Picture view",
+            href="/",
+            style="display: block; margin: 20px 0; padding-left: 10px; font-size: 18px; text-decoration: underline; color: inherit;",
+        ),
+        Table(
+            Tr(
+                Th("Title", style="min-width: 100px;"),
+                Th("Sizes", style="min-width: 100px;"),
+                Th("Price", style="min-width: 100px;"),
+            ),
+            *table_rows,
+            style="width: 100%; border-collapse: collapse;",
         ),
         Link(
             rel="stylesheet",
