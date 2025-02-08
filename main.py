@@ -1,9 +1,19 @@
 from fasthtml.common import *
 import requests
+import concurrent.futures
 
 app, rt = fast_app(hdrs=(picolink))
 
 collections = [
+    "all",
+    "aw-2021",
+    "ss-2022",
+    "aw-2022",
+    "ss-2023",
+    "aw-2023",
+    "ss-2024",
+    "aw-2024",
+    "ss-2025",
     "accessories",
     "lot-1-tops",
     "lot-2-trousers",
@@ -21,13 +31,43 @@ def mk_opts(nm, cs):
 
 
 def get_products(col):
-    # Fetch product data from the API
-    url = f"https://taigatakahashi.com/page-data/collection/{col}/page-data.json"
-    response = requests.get(url)
-    data = response.json()
 
-    # Extract product information
-    products = data["result"]["serverData"]["data"]["collection"]["products"]["edges"]
+    if col == "all":
+        # Loop through all collections and combine the products, ignoring duplicates
+        products = []
+        product_ids = set()
+
+        # Use ThreadPoolExecutor to fetch products concurrently
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future_to_collection = {
+                executor.submit(get_products, collection): collection
+                for collection in collections[1:]
+            }
+            for future in concurrent.futures.as_completed(future_to_collection):
+                try:
+                    collection_products = future.result()
+                    for product in collection_products:
+                        product_id = product["node"]["id"]
+                        if product_id not in product_ids:
+                            product_ids.add(product_id)
+                            products.append(product)
+                    print(f"Collection {future_to_collection[future]} fetched")
+                except Exception as exc:
+                    print(
+                        f"Collection {future_to_collection[future]} generated an exception: {exc}"
+                    )
+        products.sort(key=lambda product: product["node"]["title"])
+        # print(f"{len(products)} products fetched from collection {col}")
+    else:
+        # Fetch product data from the API
+        url = f"https://taigatakahashi.com/page-data/collection/{col}/page-data.json"
+        response = requests.get(url)
+        data = response.json()
+
+        # Extract product information
+        products = data["result"]["serverData"]["data"]["collection"]["products"][
+            "edges"
+        ]
 
     return products
 
@@ -197,7 +237,7 @@ def create_table_row(info):
 @rt("/{col}")
 def get(col: str):
 
-    if col is "":
+    if col == "":
         col = "lot-7-denim"
 
     products = get_products(col)
