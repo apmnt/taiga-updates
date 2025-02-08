@@ -253,7 +253,7 @@ def create_small_product_card(info):
                 target="_blank",
                 style="text-decoration: none; color: black; font-size: 18px;",
             ),
-            style="margin: 0;",
+            style="margin: 0; margin-top: -10px;",
         ),
         *sizes_colour_price,
         style="display:flex; flex-direction: column; justify-content: start; height: 150px;",  # Set the height to match the image
