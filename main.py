@@ -25,8 +25,8 @@ def get():
             node["featuredImage"]["originalSrc"] if node.get("featuredImage") else ""
         )
 
-        # Process sizes and available inventory
-        size_boxes = []
+        # Process sizes and available inventory and build spans
+        size_spans = []
         for option in node["options"]:
             if option["name"] == "SIZE":
                 for size in option["values"]:
@@ -39,18 +39,16 @@ def get():
                         0,
                     )
                     text_color = "black" if quantity > 0 else "rgb(189,188,183)"
-                    size_boxes.append(
-                        Div(
+                    size_spans.append(
+                        Span(
                             f"{size}",
-                            # f"{size} ({quantity} left)",
-                            style=f"display: table-cell; border:1px solid black; padding:2px; color:{text_color}; text-align:center; min-width:50px; font-size:18px;",
+                            style=f"color: {text_color}; font-size:18px; margin-right: 5px;",
                         )
                     )
 
-        # Wrap the size boxes in a table container so adjacent borders collapse
-        sizes_table = Div(
-            *size_boxes,
-            style="display: table; border-collapse: collapse; margin: 0 auto;",
+        sizes_field = P(
+            *size_spans,
+            style="font-size:18px;",
         )
 
         product_cards.append(
@@ -74,7 +72,7 @@ def get():
                             f"{price} {currency}",
                             style="font-size:18px;",
                         ),
-                        sizes_table,
+                        sizes_field,
                     ),
                     style="display:flex; flex-direction: column; align-items: left; text-align: left;",
                 ),
