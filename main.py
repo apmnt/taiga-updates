@@ -323,14 +323,14 @@ def get(col: str, small: str = "false"):
                 href=toggle_href,
                 style="text-decoration: underline; color: black;",
             ),
-            style="text-align: center; margin-bottom: 10px;",
+            style="text-align: right; padding-bottom: 12px; padding-right: 10px; max-width: 1450px; margin: 0 auto;",
         ),
         Container(
             *product_cards,
             style=(
                 "display: grid; gap: 16px; padding: 10px; grid-template-columns: repeat(auto-fit, minmax(300px, 2fr));"
                 if not small_bool
-                else "display: flex; flex-direction: column; gap: 16px; padding: 10px;"
+                else "display: grid; gap: 16px; padding: 10px; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));"
             ),
         ),
         Link(
@@ -365,7 +365,7 @@ def spreadsheet_view(col: str, show_qty: str = "false"):
                 href=toggle_href,
                 style="text-decoration: underline; color: black;",
             ),
-            style="text-align: center; margin-bottom: 10px;",
+            style="text-align: right; padding-bottom: 12px; padding-right: 10px; max-width: 1450px; margin: 0 auto;",
         ),
         Table(
             Tr(
