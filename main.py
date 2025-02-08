@@ -12,7 +12,7 @@ data = response.json()
 products = data["result"]["serverData"]["data"]["collection"]["products"]["edges"]
 
 
-def render_header(change_view_href, maker_margin="8px 5px"):
+def render_header(change_view_href):
     return (
         Socials(
             title="Taiga Takahashi stock status",
@@ -26,22 +26,22 @@ def render_header(change_view_href, maker_margin="8px 5px"):
         ),
         P(
             "T.T stock status",
-            style="text-align:center; margin:0px 0; font-size:36px;",
+            style="text-align:center; margin:0px 0; font-size:36px; color: black;",
         ),
         P(
             "made by ",
             A(
                 "apmnt",
                 href="https://github.com/apmnt",
-                style="color: inherit; text-decoration: underline;",
+                style="color: black; text-decoration: underline;",
             ),
-            style=f"text-align:center; margin:{maker_margin}; font-size:24px;",
+            style=f"color: black; text-align:center; margin: 8px 5px; font-size:24px;",
         ),
         Div(
             A(
                 "Change view",
                 href=change_view_href,
-                style="text-decoration: underline; color: inherit;",
+                style="text-decoration: underline; color: black;",
             ),
             style="text-align: center; padding-bottom: 20px",
         ),
@@ -96,11 +96,11 @@ def get():
         price_sizes = Div(
             P(
                 f"¥{float(price):,.0f}",
-                style="margin:0;",
+                style="margin:0; color: black;",
             ),
             P(
                 *size_spans,
-                style="margin:0;",
+                style="margin:0; color: black;",
             ),
             style="display:flex; justify-content: space-between; align-items: center; width:100%;",
         )
@@ -113,13 +113,13 @@ def get():
             image_content,
             href=product_url,
             target="_blank",
-            style="text-decoration: none; color: inherit;",
+            style="text-decoration: none; color: black;",
         )
         title_link = A(
             f"{title}",
             href=product_url,
             target="_blank",
-            style="text-decoration: none; color: inherit;",
+            style="text-decoration: none; color: black;",
         )
 
         # Build the product card. Only the image and title are clickable.
@@ -193,7 +193,7 @@ def spreadsheet_view():
                         title_with_color,
                         href=product_url,
                         target="_blank",
-                        style="text-decoration: none; color: inherit;",
+                        style="text-decoration: none; color: black;",
                     )
                 ),
                 Td(sizes),
