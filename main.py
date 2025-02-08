@@ -83,66 +83,86 @@ def extract_product_info(node):
     }
 
 
+def create_product_card(info):
+    image_content = Img(
+        src=info["src"],
+        alt=info["title"],
+        style="width:100%; height:auto;",
+    )
+
+    size_spans = [
+        Span(
+            f"{size_info['size']}",
+            style=f"color: {'black' if size_info['quantity'] > 0 else 'rgb(189,188,183)'}; margin-right: 5px;",
+        )
+        for size_info in info["sizes"]
+    ]
+
+    price_sizes = Div(
+        P(
+            f"¥{float(info['price']):,.0f}",
+            style="margin:0; color: black;",
+        ),
+        P(
+            *size_spans,
+            style="margin:0; color: black;",
+        ),
+        style="display:flex; justify-content: space-between; align-items: center; width:100%;",
+    )
+
+    image_link = A(
+        image_content,
+        href=info["url"],
+        target="_blank",
+        style="text-decoration: none; color: black;",
+    )
+    title_link = A(
+        f"{info['title']}",
+        href=info["url"],
+        target="_blank",
+        style="text-decoration: none; color: black;",
+    )
+
+    return Card(
+        Group(
+            (
+                image_link,
+                P(title_link),
+                price_sizes,
+            ),
+            style="display:flex; flex-direction: column; align-items: left; text-align: left;",
+        ),
+        style="text-align:center; padding:0; margin:0; background: inherit; box-shadow: none; border: none;",
+    )
+
+
+def create_table_row(info):
+    title_with_color = f"{info['title']} ({info['color']})"
+
+    sizes = ", ".join(
+        size_info["size"] for size_info in info["sizes"] if size_info["quantity"] > 0
+    )
+
+    return Tr(
+        Td(
+            A(
+                title_with_color,
+                href=info["url"],
+                target="_blank",
+                style="text-decoration: none; color: black;",
+            )
+        ),
+        Td(sizes),
+        Td(f"¥{float(info['price']):,.0f}"),
+    )
+
+
 @rt("/")
 def get():
-    product_cards = []
-
-    for product in products:
-        node = product["node"]
-        info = extract_product_info(node)
-
-        image_content = Img(
-            src=info["src"],
-            alt=info["title"],
-            style="width:100%; height:auto;",
-        )
-
-        size_spans = [
-            Span(
-                f"{size_info['size']}",
-                style=f"color: {'black' if size_info['quantity'] > 0 else 'rgb(189,188,183)'}; margin-right: 5px;",
-            )
-            for size_info in info["sizes"]
-        ]
-
-        price_sizes = Div(
-            P(
-                f"¥{float(info['price']):,.0f}",
-                style="margin:0; color: black;",
-            ),
-            P(
-                *size_spans,
-                style="margin:0; color: black;",
-            ),
-            style="display:flex; justify-content: space-between; align-items: center; width:100%;",
-        )
-
-        image_link = A(
-            image_content,
-            href=info["url"],
-            target="_blank",
-            style="text-decoration: none; color: black;",
-        )
-        title_link = A(
-            f"{info['title']}",
-            href=info["url"],
-            target="_blank",
-            style="text-decoration: none; color: black;",
-        )
-
-        product_cards.append(
-            Card(
-                Group(
-                    (
-                        image_link,
-                        P(title_link),
-                        price_sizes,
-                    ),
-                    style="display:flex; flex-direction: column; align-items: left; text-align: left;",
-                ),
-                style="text-align:center; padding:0; margin:0; background: inherit; box-shadow: none; border: none;",
-            )
-        )
+    product_cards = [
+        create_product_card(extract_product_info(product["node"]))
+        for product in products
+    ]
 
     return (
         *render_header(change_view_href="/spreadsheet"),
@@ -159,34 +179,9 @@ def get():
 
 @rt("/spreadsheet")
 def spreadsheet_view():
-    table_rows = []
-
-    for product in products:
-        node = product["node"]
-        info = extract_product_info(node)
-
-        title_with_color = f"{info['title']} ({info['color']})"
-
-        sizes = ", ".join(
-            size_info["size"]
-            for size_info in info["sizes"]
-            if size_info["quantity"] > 0
-        )
-
-        table_rows.append(
-            Tr(
-                Td(
-                    A(
-                        title_with_color,
-                        href=info["url"],
-                        target="_blank",
-                        style="text-decoration: none; color: black;",
-                    )
-                ),
-                Td(sizes),
-                Td(f"¥{float(info['price']):,.0f}"),
-            )
-        )
+    table_rows = [
+        create_table_row(extract_product_info(product["node"])) for product in products
+    ]
 
     return Div(
         *render_header(change_view_href="/"),
