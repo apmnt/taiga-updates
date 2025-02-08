@@ -129,7 +129,7 @@ def get():
             style="text-align:center; margin:5px 5px; font-size:24px;",
         ),
         A(
-            "Spreadsheet view",
+            "Change view",
             href="/",
             style="display: block; margin: 20px 0; padding-left: 10px; font-size: 18px; text-decoration: underline; color: inherit;",
         ),
@@ -220,7 +220,7 @@ def spreadsheet_view():
             style="text-align:center; margin:5px 5px; font-size:24px;",
         ),
         A(
-            "Picture view",
+            "Change view",
             href="/",
             style="display: block; margin: 20px 0; padding-left: 10px; font-size: 18px; text-decoration: underline; color: inherit;",
         ),
