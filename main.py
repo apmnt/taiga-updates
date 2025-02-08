@@ -84,12 +84,11 @@ def get():
 
     return (
         Socials(
-            title="Vercel + FastHTML",
+            title="Taiga Takahashi stock status",
             site_name="Vercel",
-            description="A demo of Vercel and FastHTML integration",
-            image="https://vercel.fyi/fasthtml-og",
-            url="https://fasthtml-template.vercel.app",
-            twitter_site="@vercel",
+            description="A simple clone of the Taiga Takahashi website, showing a quick overview of the stocked items.",
+            image="https://cdn.sanity.io/images/74v34t5m/production/edbf98b124e66f73c8c8eea6e32a098af6992e27-4597x2442.jpg?w=1024&h=544&auto=format",
+            url="https://taiga-updates.vercel.app",
         ),
         Container(
             *product_cards,
