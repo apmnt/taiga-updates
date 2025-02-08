@@ -2,7 +2,7 @@ from fasthtml.common import *
 import requests
 import concurrent.futures
 
-app, rt = fast_app(hdrs=(picolink))
+app, rt = fast_app()
 
 collections = [
     "all",
