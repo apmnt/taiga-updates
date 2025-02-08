@@ -213,14 +213,18 @@ def create_product_card(info):
     )
 
 
-def create_table_row(info):
+def create_table_row(info, show_quantity=False):
     title_with_color = f"{info['title']} ({info['color']})"
-
     sizes = ", ".join(
-        size_info["size"] for size_info in info["sizes"] if size_info["quantity"] > 0
+        (
+            f"{size_info['size']}-{size_info['quantity']}"
+            if show_quantity
+            else size_info["size"]
+        )
+        for size_info in info["sizes"]
+        if size_info["quantity"] > 0
     )
-
-    return Tr(
+    row_elements = [
         Td(
             A(
                 title_with_color,
@@ -231,7 +235,8 @@ def create_table_row(info):
         ),
         Td(sizes),
         Td(f"¥{float(info['price']):,.0f}"),
-    )
+    ]
+    return Tr(*row_elements)
 
 
 @rt("/{col}")
@@ -261,19 +266,32 @@ def get(col: str):
 
 
 @rt("/spreadsheet/{col}")
-def spreadsheet_view(col: str):
-
+def spreadsheet_view(col: str, show_qty: str = "false"):
     if col is "":
         col = "lot-7-denim"
-
+    show_qty_bool = show_qty.lower() == "true"
     products = get_products(col)
-
     table_rows = [
-        create_table_row(extract_product_info(product["node"])) for product in products
+        create_table_row(
+            extract_product_info(product["node"]), show_quantity=show_qty_bool
+        )
+        for product in products
     ]
+
+    # Create a toggle link to switch the show_qty state
+    toggle_href = f"/spreadsheet/{col}?show_qty={'false' if show_qty_bool else 'true'}"
+    toggle_text = "Hide Quantities" if show_qty_bool else "Show Quantities"
 
     return Div(
         *render_header(change_view_href=f"/{col}", selected_collection=col),
+        Div(
+            A(
+                toggle_text,
+                href=toggle_href,
+                style="text-decoration: underline; color: black;",
+            ),
+            style="text-align: center; margin-bottom: 10px;",
+        ),
         Table(
             Tr(
                 Th("Title", className="th"),
