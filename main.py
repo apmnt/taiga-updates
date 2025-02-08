@@ -52,7 +52,7 @@ def get():
                     size_spans.append(
                         Span(
                             f"{size}",
-                            style=f"color: {text_color}; font-size:18px; margin-right: 5px;",
+                            style=f"color: {text_color}; margin-right: 5px;",
                         )
                     )
 
@@ -60,11 +60,11 @@ def get():
         price_sizes = Div(
             P(
                 f"¥{float(price):,.0f}",
-                style="font-size:18px; margin:0;",
+                style="margin:0;",
             ),
             P(
                 *size_spans,
-                style="font-size:18px; margin:0;",
+                style="margin:0;",
             ),
             style="display:flex; justify-content: space-between; align-items: center; width:100%;",
         )
@@ -92,10 +92,7 @@ def get():
                 Group(
                     (
                         image_link,
-                        P(
-                            title_link,
-                            style="font-size:18px;",
-                        ),
+                        P(title_link),
                         price_sizes,
                     ),
                     style="display:flex; flex-direction: column; align-items: left; text-align: left;",
@@ -130,8 +127,8 @@ def get():
         ),
         A(
             "Change view",
-            href="/",
-            style="display: block; margin: 20px 0; padding-left: 10px; font-size: 18px; text-decoration: underline; color: inherit;",
+            href="/spreadsheet",
+            style="display: block; margin: 20px 0; padding-left: 10px; text-decoration: underline; color: inherit;",
         ),
         Container(
             *product_cards,
@@ -222,7 +219,7 @@ def spreadsheet_view():
         A(
             "Change view",
             href="/",
-            style="display: block; margin: 20px 0; padding-left: 10px; font-size: 18px; text-decoration: underline; color: inherit;",
+            style="display: block; margin: 20px 0; padding-left: 10px; text-decoration: underline; color: inherit;",
         ),
         Table(
             Tr(

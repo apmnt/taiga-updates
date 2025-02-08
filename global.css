@@ -6,9 +6,17 @@
   font-style: normal;
 }
 
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
 body {
   font-family: "TT Contrast", sans-serif;
   font-weight: 400;
+  font-size: 18px;
   background-color: rgb(252 250 245);
 }
 
@@ -16,4 +24,10 @@ table,
 table td,
 table th {
   background-color: rgb(252 250 245) !important;
+}
+
+@media (min-width: 1024px) {
+  body {
+    font-size: 20px;
+  }
 }
