@@ -3,9 +3,24 @@ import requests
 
 app, rt = fast_app(hdrs=(picolink))
 
+collections = [
+    "accessories",
+    "lot-1-tops",
+    "lot-2-trousers",
+    "lot-3-jackets",
+    "lot-4-outerwear",
+    "lot-5-knitwear",
+    "lot-6-jerseys",
+    "lot-7-denim",
+    "lot-8-leather",
+]
+
+
+def mk_opts(nm, cs):
+    return (*map(lambda c: Option(c, value=c, selected=c == nm), cs),)
+
 
 def get_products(col):
-
     # Fetch product data from the API
     url = f"https://taigatakahashi.com/page-data/collection/{col}/page-data.json"
     response = requests.get(url)
@@ -17,7 +32,7 @@ def get_products(col):
     return products
 
 
-def render_header(change_view_href):
+def render_header(change_view_href, selected_collection):
     return (
         Title("Taiga Stock Status"),
         Socials(
@@ -41,15 +56,31 @@ def render_header(change_view_href):
                 href="https://github.com/apmnt",
                 style="color: black; text-decoration: underline;",
             ),
-            style=f"color: black; text-align:center; margin: 8px 5px; font-size:24px;",
+            style="color: black; text-align:center; margin: 8px 5px; font-size:24px;",
         ),
+        # Change view button
         Div(
             A(
                 "Change view",
                 href=change_view_href,
                 style="text-decoration: underline; color: black;",
             ),
-            style="text-align: center; padding-bottom: 20px",
+            style="text-align: center; padding-bottom: 20px; margin: 0 20px;",
+        ),
+        # Add collection dropdown
+        Div(
+            Label(
+                "Collection:",
+                for_="collection",
+                style="padding-right: 10px; color: black;",
+            ),
+            Select(
+                *mk_opts(selected_collection, collections),
+                name="collection",
+                onchange="location = this.value;",
+                style="margin: 0; display: inline-block; max-width: 200px;",
+            ),
+            style="display: flex; flex-direction: row; justify-content: space-between; align-items: center; padding: 10px;",
         ),
     )
 
@@ -166,6 +197,9 @@ def create_table_row(info):
 @rt("/{col}")
 def get(col: str):
 
+    if col is "":
+        col = "lot-7-denim"
+
     products = get_products(col)
 
     product_cards = [
@@ -174,7 +208,7 @@ def get(col: str):
     ]
 
     return (
-        *render_header(change_view_href=f"/spreadsheet/{col}"),
+        *render_header(change_view_href=f"/spreadsheet/{col}", selected_collection=col),
         Container(
             *product_cards,
             style="display: grid; gap: 16px; padding: 10px; grid-template-columns: repeat(auto-fit, minmax(300px, 2fr));",
@@ -189,6 +223,9 @@ def get(col: str):
 @rt("/spreadsheet/{col}")
 def spreadsheet_view(col: str):
 
+    if col is "":
+        col = "lot-7-denim"
+
     products = get_products(col)
 
     table_rows = [
@@ -196,7 +233,7 @@ def spreadsheet_view(col: str):
     ]
 
     return Div(
-        *render_header(change_view_href=f"/{col}"),
+        *render_header(change_view_href=f"/{col}", selected_collection=col),
         Table(
             Tr(
                 Th("Title", className="th"),
