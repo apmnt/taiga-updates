@@ -3,13 +3,18 @@ import requests
 
 app, rt = fast_app(hdrs=(picolink))
 
-# Fetch product data from the API
-url = "https://taigatakahashi.com/page-data/collection/lot-7-denim/page-data.json"
-response = requests.get(url)
-data = response.json()
 
-# Extract product information
-products = data["result"]["serverData"]["data"]["collection"]["products"]["edges"]
+def get_products(col):
+
+    # Fetch product data from the API
+    url = f"https://taigatakahashi.com/page-data/collection/{col}/page-data.json"
+    response = requests.get(url)
+    data = response.json()
+
+    # Extract product information
+    products = data["result"]["serverData"]["data"]["collection"]["products"]["edges"]
+
+    return products
 
 
 def render_header(change_view_href):
@@ -158,15 +163,18 @@ def create_table_row(info):
     )
 
 
-@rt("/")
-def get():
+@rt("/{col}")
+def get(col: str):
+
+    products = get_products(col)
+
     product_cards = [
         create_product_card(extract_product_info(product["node"]))
         for product in products
     ]
 
     return (
-        *render_header(change_view_href="/spreadsheet"),
+        *render_header(change_view_href=f"/spreadsheet/{col}"),
         Container(
             *product_cards,
             style="display: grid; gap: 16px; padding: 10px; grid-template-columns: repeat(auto-fit, minmax(300px, 2fr));",
@@ -178,14 +186,17 @@ def get():
     )
 
 
-@rt("/spreadsheet")
-def spreadsheet_view():
+@rt("/spreadsheet/{col}")
+def spreadsheet_view(col: str):
+
+    products = get_products(col)
+
     table_rows = [
         create_table_row(extract_product_info(product["node"])) for product in products
     ]
 
     return Div(
-        *render_header(change_view_href="/"),
+        *render_header(change_view_href=f"/{col}"),
         Table(
             Tr(
                 Th("Title", className="th"),
@@ -197,7 +208,7 @@ def spreadsheet_view():
         ),
         Link(
             rel="stylesheet",
-            href="./global.css",
+            href="../global.css",
         ),
     )
 
