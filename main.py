@@ -46,9 +46,17 @@ def get():
                         )
                     )
 
-        sizes_field = P(
-            *size_spans,
-            style="font-size:18px;",
+        # Build a container for price and sizes, aligned appropriately
+        price_sizes = Div(
+            P(
+                f"¥{float(price):,.0f}",
+                style="font-size:18px; margin:0;",
+            ),
+            P(
+                *size_spans,
+                style="font-size:18px; margin:0;",
+            ),
+            style="display:flex; justify-content: space-between; align-items: center; width:100%;",
         )
 
         product_cards.append(
@@ -68,11 +76,7 @@ def get():
                             f"{title}",
                             style="font-size:18px;",
                         ),
-                        P(
-                            f"{price} {currency}",
-                            style="font-size:18px;",
-                        ),
-                        sizes_field,
+                        price_sizes,
                     ),
                     style="display:flex; flex-direction: column; align-items: left; text-align: left;",
                 ),
