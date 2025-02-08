@@ -100,7 +100,7 @@ def get():
                     ),
                     style="display:flex; flex-direction: column; align-items: left; text-align: left;",
                 ),
-                style="width:100%; text-align:center; padding:0; margin:0; background: inherit; box-shadow: none; border: none;",
+                style="text-align:center; padding:0; margin:0; background: inherit; box-shadow: none; border: none;",
             )
         )
 
@@ -127,7 +127,7 @@ def get():
         ),
         Container(
             *product_cards,
-            style="display:flex; flex-wrap:wrap; justify-content:center; max-width:100%;",
+            style="display: grid; gap: 16px; padding: 10px; grid-template-columns: repeat(auto-fit, minmax(300px, 2fr));",
         ),
         Link(
             rel="stylesheet",
