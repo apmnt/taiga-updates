@@ -32,6 +32,9 @@ def mk_opts(nm, cs):
 
 def get_products(col):
 
+    if col == "":
+        col = "lot-7-denim"
+
     if col == "all":
         # Loop through all collections and combine the products, ignoring duplicates
         products = []
@@ -295,42 +298,62 @@ def create_table_row(info, show_quantity=False):
 
 
 @rt("/{col}")
-def get(col: str, small: str = "false"):
-    if col == "":
-        col = "lot-7-denim"
-
-    # Determine which view to use based on the query parameter
+def get(col: str, small: str = "false", hide_sold: str = "false"):
     small_bool = small.lower() == "true"
-    toggle_href = f"/{col}?small={'false' if small_bool else 'true'}"
+    hide_sold_bool = hide_sold.lower() == "true"
+    small_param = "true" if small_bool else "false"
+
+    # Toggle for product card view
+    toggle_href = (
+        f"/{col}?small={'false' if small_bool else 'true'}&hide_sold={hide_sold}"
+    )
     toggle_text = "Large images" if small_bool else "Small images"
+
+    # Toggle for hide sold-out items
+    toggle_hide_sold = "false" if hide_sold_bool else "true"
+    hide_sold_text = "Show sold‑out items" if hide_sold_bool else "Hide sold‑out items"
+    toggle_hide_sold_href = f"/{col}?small={small_param}&hide_sold={toggle_hide_sold}"
 
     products = get_products(col)
 
-    # Use the corresponding card creator
-    product_cards = [
-        (create_small_product_card if small_bool else create_product_card)(
-            extract_product_info(product["node"])
-        )
-        for product in products
-    ]
+    # Filter products if hide_sold_bool is True
+    product_cards = []
+    for product in products:
+        info = extract_product_info(product["node"])
+        if hide_sold_bool and not any(s["quantity"] > 0 for s in info["sizes"]):
+            continue
+        card = (create_small_product_card if small_bool else create_product_card)(info)
+        product_cards.append(card)
 
     return (
         *render_header(change_view_href=f"/spreadsheet/{col}", selected_collection=col),
-        # Toggle for card view version
         Div(
-            A(
-                toggle_text,
-                href=toggle_href,
-                style="text-decoration: underline; color: black;",
+            Div(
+                A(
+                    hide_sold_text,
+                    href=toggle_hide_sold_href,
+                    style="text-decoration: underline; color: black;",
+                ),
+                style="padding-bottom: 12px;",
             ),
-            style="text-align: right; padding-bottom: 12px; padding-right: 10px; max-width: 1450px; margin: 0 auto;",
+            Div(
+                A(
+                    toggle_text,
+                    href=toggle_href,
+                    style="text-decoration: underline; color: black;",
+                ),
+                style="padding-bottom: 12px;",
+            ),
+            style="text-align: right; padding-right: 10px; max-width: 1450px; margin: 0 auto;",
         ),
         Container(
             *product_cards,
             style=(
-                "display: grid; gap: 16px; padding: 10px; grid-template-columns: repeat(auto-fit, minmax(300px, 2fr));"
+                "display: grid; gap: 16px; padding: 10px; grid-template-columns: "
+                "repeat(auto-fit, minmax(300px, 2fr));"
                 if not small_bool
-                else "display: grid; gap: 16px; padding: 10px; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));"
+                else "display: grid; gap: 16px; padding: 10px; grid-template-columns: "
+                "repeat(auto-fit, minmax(400px, 1fr));"
             ),
         ),
         Link(
@@ -341,31 +364,50 @@ def get(col: str, small: str = "false"):
 
 
 @rt("/spreadsheet/{col}")
-def spreadsheet_view(col: str, show_qty: str = "false"):
-    if col == "":
-        col = "lot-7-denim"
+def spreadsheet_view(col: str, show_qty: str = "false", hide_sold: str = "false"):
     show_qty_bool = show_qty.lower() == "true"
-    products = get_products(col)
-    table_rows = [
-        create_table_row(
-            extract_product_info(product["node"]), show_quantity=show_qty_bool
-        )
-        for product in products
-    ]
+    hide_sold_bool = hide_sold.lower() == "true"
+    show_qty_param = "true" if show_qty_bool else "false"
 
-    # Create a toggle link to switch the show_qty state
-    toggle_href = f"/spreadsheet/{col}?show_qty={'false' if show_qty_bool else 'true'}"
+    # Toggle for table view quantities
+    toggle_href = f"/spreadsheet/{col}?show_qty={'false' if show_qty_bool else 'true'}&hide_sold={hide_sold}"
     toggle_text = "Hide Quantities" if show_qty_bool else "Show Quantities"
+
+    # Toggle for hide sold-out items
+    toggle_hide_sold = "false" if hide_sold_bool else "true"
+    hide_sold_text = "Show sold‑out items" if hide_sold_bool else "Hide sold‑out items"
+    toggle_hide_sold_href = (
+        f"/spreadsheet/{col}?show_qty={show_qty_param}&hide_sold={toggle_hide_sold}"
+    )
+
+    products = get_products(col)
+    table_rows = []
+    for product in products:
+        info = extract_product_info(product["node"])
+        if hide_sold_bool and not any(s["quantity"] > 0 for s in info["sizes"]):
+            continue
+        table_rows.append(create_table_row(info, show_quantity=show_qty_bool))
 
     return Div(
         *render_header(change_view_href=f"/{col}", selected_collection=col),
         Div(
-            A(
-                toggle_text,
-                href=toggle_href,
-                style="text-decoration: underline; color: black;",
+            Div(
+                A(
+                    hide_sold_text,
+                    href=toggle_hide_sold_href,
+                    style="text-decoration: underline; color: black;",
+                ),
+                style="padding-bottom: 12px;",
             ),
-            style="text-align: right; padding-bottom: 12px; padding-right: 10px; max-width: 1450px; margin: 0 auto;",
+            Div(
+                A(
+                    toggle_text,
+                    href=toggle_href,
+                    style="text-decoration: underline; color: black;",
+                ),
+                style="padding-bottom: 12px;",
+            ),
+            style="text-align: right; padding-right: 10px; max-width: 1450px; margin: 0 auto;",
         ),
         Table(
             Tr(
