@@ -208,6 +208,7 @@ def create_product_card(info):
             (
                 image_link,
                 P(title_link),
+                P(f"{info['color']}"),
                 price_sizes,
             ),
             style="display:flex; flex-direction: column; align-items: left; text-align: left;",
