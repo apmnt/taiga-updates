@@ -300,6 +300,10 @@ def create_table_row(info, show_quantity=False):
 
 @rt("/{col}")
 def get(col: str, small: str = "false", hide_sold: str = "false"):
+
+    if col == "":
+        col = "lot-7-denim"
+
     small_bool = small.lower() == "true"
     hide_sold_bool = hide_sold.lower() == "true"
     small_param = "true" if small_bool else "false"
