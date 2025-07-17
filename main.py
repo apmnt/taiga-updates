@@ -14,6 +14,7 @@ collections = [
     "ss-2024",
     "aw-2024",
     "ss-2025",
+    "aw-2025",
     "accessories",
     "lot-1-tops",
     "lot-2-trousers",
