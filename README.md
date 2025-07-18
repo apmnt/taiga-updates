@@ -5,3 +5,12 @@ This FastHTML project mirrors the https://taigatakahashi.com site, sending reque
 Taiga Takahashi restocks new items randomly, and the original site does not allow you to check which sizes are in stock without opening the product page. 
 
 On this site the available sizes are clearly visible, and the spreadsheet view allows an even faster way to check the stock.
+
+## Running locally
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+uvicorn main:app --reload
+```

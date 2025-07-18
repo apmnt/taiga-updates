@@ -1,3 +1,4 @@
 .vercel
 .sesskey
+.env
 __pycache__/**

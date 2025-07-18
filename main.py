@@ -1,6 +1,112 @@
 from fasthtml.common import *
 import requests
 import concurrent.futures
+import os
+from pymongo import MongoClient
+from datetime import datetime
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# MongoDB connection setup
+MONGODB_USER = os.environ.get("MONGODB_USER", "")
+MONGODB_PASSWORD = os.environ.get("MONGODB_PASSWORD", "")
+MONGODB_URI = f"mongodb+srv://{MONGODB_USER}:{MONGODB_PASSWORD}@taiga.q8szlsh.mongodb.net/?retryWrites=true&w=majority&appName=taiga"
+MONGODB_DB = os.environ.get("MONGODB_DB", "taiga_stock")
+MONGODB_COLLECTION = os.environ.get("MONGODB_COLLECTION", "stock_history")
+
+# Initialize MongoDB client
+mongo_client = None
+db = None
+collection = None
+
+
+def connect_to_mongodb():
+    global mongo_client, db, collection
+    try:
+        mongo_client = MongoClient(MONGODB_URI)
+        db = mongo_client[MONGODB_DB]
+        collection = db[MONGODB_COLLECTION]
+        print("Connected to MongoDB successfully")
+        return True
+    except Exception as e:
+        print(f"Error connecting to MongoDB: {e}")
+        return False
+
+
+def update_stock_history(product_id, sizes_data):
+    """Update the stock history for a product in MongoDB
+    sizes_data: A list of dictionaries, each containing 'size' and 'quantity'"""
+    if collection is None and not connect_to_mongodb():
+        print("MongoDB connection not available, skipping stock history update")
+        return
+
+    try:
+        # Get current timestamp in ISO format
+        current_time = datetime.utcnow().isoformat()
+
+        # Check if this product exists
+        product_record = collection.find_one({"product_id": product_id})
+
+        # Convert sizes_data to a dictionary for easier storage
+        sizes_stock = {item["size"]: item["quantity"] for item in sizes_data}
+
+        if product_record:
+            # Get the last recorded stock snapshot
+            stock_history = product_record.get("stock_history", [])
+
+            # Check if stock has changed since last record
+            if stock_history:
+                last_entry = stock_history[-1]
+                last_sizes_stock = last_entry.get("sizes", {})
+
+                # Only update if the quantities have changed
+                if last_sizes_stock != sizes_stock:
+                    # Add new snapshot with timestamp and all sizes
+                    collection.update_one(
+                        {"product_id": product_id},
+                        {
+                            "$push": {
+                                "stock_history": {
+                                    "timestamp": current_time,
+                                    "sizes": sizes_stock,
+                                }
+                            }
+                        },
+                    )
+                    print(
+                        f"Updated stock history for product {product_id} with new quantities"
+                    )
+
+            else:
+                # No history yet, add the first entry
+                collection.update_one(
+                    {"product_id": product_id},
+                    {
+                        "$push": {
+                            "stock_history": {
+                                "timestamp": current_time,
+                                "sizes": sizes_stock,
+                            }
+                        }
+                    },
+                )
+                print(f"Added first stock history entry for product {product_id}")
+        else:
+            # Product doesn't exist yet, create it
+            collection.insert_one(
+                {
+                    "product_id": product_id,
+                    "stock_history": [
+                        {"timestamp": current_time, "sizes": sizes_stock}
+                    ],
+                }
+            )
+            print(f"Created new stock history for product {product_id}")
+    except Exception as e:
+        print(f"Error updating stock history: {e}")
+
 
 app, rt = fast_app()
 
@@ -130,9 +236,10 @@ def render_header(change_view_href, selected_collection):
 
 
 def extract_product_info(node):
-    return {
+    product_info = {
         "title": node["title"],
         "price": node["priceRange"]["minVariantPrice"]["amount"],
+        "handle": node["handle"],
         "url": f"https://taigatakahashi.com/products/{node['handle']}/",
         "src": (
             node["featuredImage"]["originalSrc"] if node.get("featuredImage") else ""
@@ -162,6 +269,11 @@ def extract_product_info(node):
             "",
         ),
     }
+
+    # Track stock changes for the product in MongoDB - pass all sizes at once
+    update_stock_history(product_info["handle"], product_info["sizes"])
+
+    return product_info
 
 
 def create_product_card(info):
