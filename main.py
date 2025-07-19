@@ -251,11 +251,16 @@ def render_header(change_view_href, selected_collection):
             ),
             style="color: black; text-align:center; margin: 8px 5px; font-size:24px;",
         ),
-        # Change view button
+        # Navigation links
         Div(
             A(
                 "Change view",
                 href=change_view_href,
+                style="text-decoration: underline; color: black; margin-right: 20px;",
+            ),
+            A(
+                "Recent Events",
+                href="/events",
                 style="text-decoration: underline; color: black;",
             ),
             style="text-align: center; padding-bottom: 20px; margin: 0 20px;",
@@ -586,4 +591,184 @@ def spreadsheet_view(col: str, show_qty: str = "false", hide_sold: str = "false"
     )
 
 
-serve()
+@rt("/events")
+def events_view(limit: str = "50"):
+    print(f"Fetching events with limit: {limit}")
+
+    # Convert the limit to an integer with a default if conversion fails
+    try:
+        limit_int = int(limit)
+        if limit_int <= 0:
+            limit_int = 50
+    except ValueError:
+        limit_int = 50
+
+    # Connect to MongoDB if not already connected
+    if events_collection is None and not connect_to_mongodb():
+        return Div(
+            P("MongoDB connection not available. Unable to display events."),
+            style="text-align: center; padding: 20px; color: red;",
+        )
+
+    # Fetch the most recent events
+    try:
+        recent_events = list(
+            events_collection.find().sort("timestamp", -1).limit(limit_int)
+        )
+
+        # Group events by product
+        events_by_product = {}
+        for event in recent_events:
+            product_id = event.get("product_id", "unknown")
+            if product_id not in events_by_product:
+                events_by_product[product_id] = []
+            events_by_product[product_id].append(event)
+
+        # Create event cards for each product
+        event_cards = []
+        for product_id, events in events_by_product.items():
+            # Get the product URL
+            product_url = f"https://taigatakahashi.com/products/{product_id}/"
+
+            # Create a list of event entries
+            event_entries = []
+            for event in events:
+                timestamp = event.get("timestamp")
+                size = event.get("size", "N/A")
+                old_stock = event.get("old_stock", 0)
+                new_stock = event.get("new_stock", 0)
+
+                # Format the timestamp
+                formatted_time = (
+                    timestamp.strftime("%Y-%m-%d %H:%M:%S UTC")
+                    if timestamp
+                    else "Unknown time"
+                )
+
+                # Create a description of the stock change
+                if new_stock > old_stock:
+                    change_desc = f"Restocked: {old_stock} → {new_stock}"
+                    change_color = "green"
+                elif new_stock < old_stock:
+                    change_desc = f"Reduced: {old_stock} → {new_stock}"
+                    change_color = "red"
+                else:
+                    change_desc = f"No change: {old_stock}"
+                    change_color = "black"
+
+                event_entries.append(
+                    Div(
+                        P(f"Size: {size}", style="margin: 0; font-weight: bold;"),
+                        P(change_desc, style=f"margin: 0; color: {change_color};"),
+                        P(
+                            formatted_time,
+                            style="margin: 0; font-size: 14px; color: gray;",
+                        ),
+                        style="margin-bottom: 10px; padding: 5px; border-bottom: 1px solid #eee;",
+                    )
+                )
+
+            # Create a card for the product
+            event_cards.append(
+                Card(
+                    Div(
+                        H3(
+                            A(
+                                product_id.replace("-", " ").title(),
+                                href=product_url,
+                                target="_blank",
+                                style="text-decoration: none; color: black;",
+                            ),
+                            style="margin-top: 0;",
+                        ),
+                        *event_entries,
+                        style="padding: 10px;",
+                    ),
+                    style="margin-bottom: 20px; background-color: rgb(252, 250, 245); border: 1px solid #ddd; border-radius: 5px;",
+                )
+            )
+
+        # Display a message if no events were found
+        if not event_cards:
+            return Div(
+                P("No stock change events found."),
+                style="text-align: center; padding: 20px;",
+            )
+
+        # Add filter controls
+        filter_controls = Div(
+            H2("Recent Stock Changes", style="text-align: center;"),
+            Div(
+                Label("Show last ", style="color: black;"),
+                Select(
+                    Option("25", value="25", selected=limit == "25"),
+                    Option("50", value="50", selected=limit == "50"),
+                    Option("100", value="100", selected=limit == "100"),
+                    Option("200", value="200", selected=limit == "200"),
+                    name="limit",
+                    onchange="location = '/events?limit=' + this.value;",
+                    style="margin: 0 5px;",
+                ),
+                Label(" events", style="color: black;"),
+                style="display: flex; align-items: center; justify-content: center; margin-bottom: 20px;",
+            ),
+            style="max-width: 1450px; margin: 0 auto; padding: 20px 10px;",
+        )
+
+        # Create a simplified header that doesn't include the collection dropdown
+        simple_header = (
+            Title("Taiga Stock Events"),
+            Socials(
+                title="Taiga Takahashi stock events",
+                site_name="Vercel",
+                description="A history of stock changes for Taiga Takahashi products.",
+                w=1024,
+                h=544,
+                creator="apmnt",
+                image="https://cdn.sanity.io/images/74v34t5m/production/edbf98b124e66f73c8c8eea6e32a098af6992e27-4597x2442.jpg?w=1024&h=544&auto=format",
+                url="https://taiga-updates.vercel.app/events",
+            ),
+            P(
+                "T.T stock events",
+                style="text-align:center; margin:0px 0; font-size:36px; color: black;",
+            ),
+            P(
+                "made by ",
+                A(
+                    "apmnt",
+                    href="https://github.com/apmnt",
+                    style="color: black; text-decoration: underline;",
+                ),
+                style="color: black; text-align:center; margin: 8px 5px; font-size:24px;",
+            ),
+            # Navigation links
+            Div(
+                A(
+                    "← Back to products",
+                    href="/",
+                    style="text-decoration: underline; color: black;",
+                ),
+                style="text-align: center; padding-bottom: 20px; margin: 0 20px;",
+            ),
+        )
+
+        # Return the completed view with the simplified header
+        return Div(
+            *simple_header,
+            filter_controls,
+            Container(
+                *event_cards,
+                style="max-width: 1450px; margin: 0 auto; padding: 0 10px;",
+            ),
+            Link(
+                rel="stylesheet",
+                href="./global.css",
+            ),
+            style="background-color: rgb(252, 250, 245); min-height: 100vh;",
+        )
+
+    except Exception as e:
+        return Div(
+            P(f"Error retrieving events: {str(e)}"),
+            style="text-align: center; padding: 20px; color: red;",
+        )
