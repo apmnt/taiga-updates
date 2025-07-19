@@ -3,7 +3,7 @@ import requests
 import concurrent.futures
 import os
 from pymongo import MongoClient
-from datetime import datetime
+from datetime import datetime, timezone
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -13,21 +13,24 @@ load_dotenv()
 MONGODB_USER = os.environ.get("MONGODB_USER", "")
 MONGODB_PASSWORD = os.environ.get("MONGODB_PASSWORD", "")
 MONGODB_URI = f"mongodb+srv://{MONGODB_USER}:{MONGODB_PASSWORD}@taiga.q8szlsh.mongodb.net/?retryWrites=true&w=majority&appName=taiga"
-MONGODB_DB = os.environ.get("MONGODB_DB", "taiga_stock")
-MONGODB_COLLECTION = os.environ.get("MONGODB_COLLECTION", "stock_history")
+MONGODB_DB = os.environ.get("MONGODB_DB", "")
+MONGODB_HISTORY_COLLECTION = os.environ.get("MONGODB_HISTORY_COLLECTION", "")
+MONGODB_EVENTS_COLLECTION = os.environ.get("MONGODB_EVENTS_COLLECTION", "events")
 
 # Initialize MongoDB client
 mongo_client = None
 db = None
 collection = None
+events_collection = None
 
 
 def connect_to_mongodb():
-    global mongo_client, db, collection
+    global mongo_client, db, collection, events_collection
     try:
         mongo_client = MongoClient(MONGODB_URI)
         db = mongo_client[MONGODB_DB]
-        collection = db[MONGODB_COLLECTION]
+        collection = db[MONGODB_HISTORY_COLLECTION]
+        events_collection = db[MONGODB_EVENTS_COLLECTION]
         print("Connected to MongoDB successfully")
         return True
     except Exception as e:
@@ -43,14 +46,17 @@ def update_stock_history(product_id, sizes_data):
         return
 
     try:
-        # Get current timestamp in ISO format
-        current_time = datetime.utcnow().isoformat()
+        # Get current timestamp as a datetime object
+        current_time = datetime.now(timezone.utc)
 
         # Check if this product exists
         product_record = collection.find_one({"product_id": product_id})
 
         # Convert sizes_data to a dictionary for easier storage
         sizes_stock = {item["size"]: item["quantity"] for item in sizes_data}
+
+        # Flag to force event creation on first load
+        is_first_load = False
 
         if product_record:
             # Get the last recorded stock snapshot
@@ -63,6 +69,25 @@ def update_stock_history(product_id, sizes_data):
 
                 # Only update if the quantities have changed
                 if last_sizes_stock != sizes_stock:
+                    # Track stock change events
+                    for size, new_stock in sizes_stock.items():
+                        old_stock = last_sizes_stock.get(size, 0)
+                        if new_stock != old_stock:
+                            # Create an event record for this stock change
+                            if events_collection is not None:
+                                events_collection.insert_one(
+                                    {
+                                        "timestamp": current_time,
+                                        "product_id": product_id,
+                                        "size": size,
+                                        "old_stock": old_stock,
+                                        "new_stock": new_stock,
+                                    }
+                                )
+                                print(
+                                    f"Stock change event recorded for {product_id}, size {size}: {old_stock} -> {new_stock}"
+                                )
+
                     # Add new snapshot with timestamp and all sizes
                     collection.update_one(
                         {"product_id": product_id},
@@ -78,9 +103,8 @@ def update_stock_history(product_id, sizes_data):
                     print(
                         f"Updated stock history for product {product_id} with new quantities"
                     )
-
             else:
-                # No history yet, add the first entry
+                # No history yet but product exists - add the first entry
                 collection.update_one(
                     {"product_id": product_id},
                     {
@@ -93,6 +117,7 @@ def update_stock_history(product_id, sizes_data):
                     },
                 )
                 print(f"Added first stock history entry for product {product_id}")
+                is_first_load = True
         else:
             # Product doesn't exist yet, create it
             collection.insert_one(
@@ -104,6 +129,24 @@ def update_stock_history(product_id, sizes_data):
                 }
             )
             print(f"Created new stock history for product {product_id}")
+            is_first_load = True
+
+        # When creating a new product or first load, treat all stock as new (from 0)
+        if is_first_load and events_collection is not None:
+            for size, quantity in sizes_stock.items():
+                # Record all sizes, not just those with stock > 0
+                events_collection.insert_one(
+                    {
+                        "timestamp": current_time,
+                        "product_id": product_id,
+                        "size": size,
+                        "old_stock": 0,
+                        "new_stock": quantity,
+                    }
+                )
+                print(
+                    f"Stock event recorded for {product_id}, size {size}: 0 -> {quantity}"
+                )
     except Exception as e:
         print(f"Error updating stock history: {e}")
 
