@@ -2,3 +2,4 @@
 .sesskey
 .env
 __pycache__/**
+oracle.key
