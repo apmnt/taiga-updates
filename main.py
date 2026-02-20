@@ -63,7 +63,6 @@ def get_products(col):
                     print(
                         f"Collection {future_to_collection[future]} generated an exception: {exc}"
                     )
-        products.sort(key=lambda product: product["node"]["title"])
         # print(f"{len(products)} products fetched from collection {col}")
     else:
         # Fetch product data from the API
@@ -76,6 +75,7 @@ def get_products(col):
             "edges"
         ]
 
+    products.sort(key=lambda product: product["node"]["title"].lower())
     return products
 
 
