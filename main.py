@@ -383,7 +383,7 @@ def get(col: str, small: str = "false", hide_sold: str = "false"):
         ),
         Link(
             rel="stylesheet",
-            href="./global.css",
+            href="/global.css",
         ),
     )
 
@@ -445,7 +445,7 @@ def spreadsheet_view(col: str, show_qty: str = "false", hide_sold: str = "false"
         ),
         Link(
             rel="stylesheet",
-            href="../global.css",
+            href="/global.css",
         ),
     )
 
