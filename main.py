@@ -212,8 +212,8 @@ def create_product_card(info):
         style="text-decoration: none; color: black;",
     )
 
-    return Card(
-        Group(
+    return Article(
+        Div(
             (
                 image_link,
                 P(title_link),
@@ -271,7 +271,7 @@ def create_small_product_card(info):
         *sizes_colour_price,
         style="display:flex; flex-direction: column; justify-content: start; height: 150px;",  # Set the height to match the image
     )
-    return Card(
+    return Article(
         Div(
             image_content,
             text_content,
@@ -360,8 +360,9 @@ def get(col: str, small: str = "false", hide_sold: str = "false"):
             ),
             style="text-align: right; padding-right: 10px; max-width: 1450px; margin: 0 auto;",
         ),
-        Container(
+        Div(
             *product_cards,
+            cls="container",
             style=(
                 "display: grid; gap: 16px; padding: 10px; grid-template-columns: "
                 "repeat(auto-fit, minmax(300px, 2fr));"
