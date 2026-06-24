@@ -226,8 +226,10 @@ def create_product_card(info):
         Div(
             (
                 image_link,
-                P(title_link),
-                P(f"{info['color']}"),
+                # Halve Pico's default 1rem paragraph margin so the name,
+                # color, and price lines sit closer together.
+                P(title_link, style="margin: 0 0 0.5rem 0;"),
+                P(f"{info['color']}", style="margin: 0 0 0.5rem 0;"),
                 price_sizes,
             ),
             style="display:flex; flex-direction: column; align-items: left; text-align: left;",
