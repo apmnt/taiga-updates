@@ -1,32 +1,41 @@
 from fasthtml.common import *
 import requests
-import concurrent.futures
 import os
 from datetime import datetime, timezone
 
 app, rt = fast_app()
 
+# Default collection shown when none is specified.
+DEFAULT_COLLECTION = "men-new"
+
+# Taiga Takahashi now runs on Shopify, so these are Shopify collection handles
+# served by https://taigatakahashi.com/collections/<handle>/products.json
 collections = [
     "all",
-    "aw-2021",
-    "ss-2022",
-    "aw-2022",
-    "ss-2023",
-    "aw-2023",
-    "ss-2024",
-    "aw-2024",
-    "ss-2025",
-    "aw-2025",
-    "ss-2026",
-    "accessories",
-    "lot-1-tops",
-    "lot-2-trousers",
-    "lot-3-jackets",
-    "lot-4-outerwear",
-    "lot-5-knitwear",
-    "lot-6-jerseys",
-    "lot-7-denim",
-    "lot-8-leather",
+    "men-new",
+    "women-new",
+    "men-denim",
+    "men-tops",
+    "men-toursers",
+    "men-jackets",
+    "men-outerwear",
+    "men-knitwear",
+    "men-jerseys",
+    "men-leather",
+    "men-accessories",
+    "men-core",
+    "men-archive",
+    "women-denim",
+    "women-tops",
+    "women-toursers",
+    "women-dress",
+    "women-jackets",
+    "women-outerwear",
+    "women-knitwear",
+    "women-jerseys",
+    "women-leather",
+    "women-accessories",
+    "bags",
 ]
 
 
@@ -37,45 +46,25 @@ def mk_opts(nm, cs):
 def get_products(col):
 
     if col == "":
-        col = "lot-7-denim"
+        col = DEFAULT_COLLECTION
 
-    if col == "all":
-        # Loop through all collections and combine the products, ignoring duplicates
-        products = []
-        product_ids = set()
+    # Shopify exposes a public products.json per collection (including a native
+    # "all" collection), paginated at 250 items per page.
+    products = []
+    page = 1
+    while True:
+        url = f"https://taigatakahashi.com/collections/{col}/products.json"
+        response = requests.get(url, params={"limit": 250, "page": page})
+        response.raise_for_status()
+        batch = response.json().get("products", [])
+        if not batch:
+            break
+        products.extend(batch)
+        if len(batch) < 250:
+            break
+        page += 1
 
-        # Use ThreadPoolExecutor to fetch products concurrently
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            future_to_collection = {
-                executor.submit(get_products, collection): collection
-                for collection in collections[1:]
-            }
-            for future in concurrent.futures.as_completed(future_to_collection):
-                try:
-                    collection_products = future.result()
-                    for product in collection_products:
-                        product_id = product["node"]["id"]
-                        if product_id not in product_ids:
-                            product_ids.add(product_id)
-                            products.append(product)
-                    print(f"Collection {future_to_collection[future]} fetched")
-                except Exception as exc:
-                    print(
-                        f"Collection {future_to_collection[future]} generated an exception: {exc}"
-                    )
-        # print(f"{len(products)} products fetched from collection {col}")
-    else:
-        # Fetch product data from the API
-        url = f"https://taigatakahashi.com/page-data/collection/{col}/page-data.json"
-        response = requests.get(url)
-        data = response.json()
-
-        # Extract product information
-        products = data["result"]["serverData"]["data"]["collection"]["products"][
-            "edges"
-        ]
-
-    products.sort(key=lambda product: product["node"]["title"].lower())
+    products.sort(key=lambda product: product["title"].lower())
     return products
 
 
@@ -132,35 +121,48 @@ def render_header(change_view_href, selected_collection):
     )
 
 
-def extract_product_info(node):
+def extract_product_info(product):
+    options = product.get("options", [])
+    variants = product.get("variants", [])
+    images = product.get("images", [])
+
+    # Shopify no longer exposes exact inventory counts to unauthenticated
+    # clients, so availability is a boolean per variant. We map it to a
+    # quantity of 1 (in stock) or 0 (sold out) to keep the rest of the UI,
+    # which only checks quantity > 0, working unchanged.
+    def size_quantity(size_option, size):
+        position = size_option["position"]
+        variant = next(
+            (v for v in variants if v.get(f"option{position}") == size),
+            None,
+        )
+        return 1 if (variant and variant.get("available")) else 0
+
+    size_option = next(
+        (o for o in options if o["name"].lower() == "size"),
+        None,
+    )
+
+    prices = [float(v["price"]) for v in variants if v.get("price") is not None]
+
     product_info = {
-        "title": node["title"],
-        "price": node["priceRange"]["minVariantPrice"]["amount"],
-        "handle": node["handle"],
-        "url": f"https://taigatakahashi.com/products/{node['handle']}/",
-        "src": (
-            node["featuredImage"]["originalSrc"] if node.get("featuredImage") else ""
+        "title": product["title"],
+        "price": min(prices) if prices else 0,
+        "handle": product["handle"],
+        "url": f"https://taigatakahashi.com/products/{product['handle']}/",
+        "src": images[0]["src"] if images else "",
+        "sizes": (
+            [
+                {"size": size, "quantity": size_quantity(size_option, size)}
+                for size in size_option["values"]
+            ]
+            if size_option
+            else []
         ),
-        "sizes": [
-            {
-                "size": size,
-                "quantity": next(
-                    (
-                        variant["node"]["quantityAvailable"]
-                        for variant in node["variants"]["edges"]
-                        if variant["node"]["selectedOptions"][0]["value"] == size
-                    ),
-                    0,
-                ),
-            }
-            for option in node["options"]
-            if option["name"].lower() == "size"
-            for size in option["values"]
-        ],
         "color": next(
             (
                 option["values"][0]
-                for option in node["options"]
+                for option in options
                 if option["name"].lower() == "color"
             ),
             "",
@@ -309,7 +311,7 @@ def create_table_row(info, show_quantity=False):
 def get(col: str, small: str = "false", hide_sold: str = "false"):
 
     if col == "":
-        col = "lot-7-denim"
+        col = DEFAULT_COLLECTION
 
     small_bool = small.lower() == "true"
     hide_sold_bool = hide_sold.lower() == "true"
@@ -331,7 +333,7 @@ def get(col: str, small: str = "false", hide_sold: str = "false"):
     # Filter products if hide_sold_bool is True
     product_cards = []
     for product in products:
-        info = extract_product_info(product["node"])
+        info = extract_product_info(product)
         if hide_sold_bool and not any(s["quantity"] > 0 for s in info["sizes"]):
             continue
         card = (create_small_product_card if small_bool else create_product_card)(info)
@@ -395,7 +397,7 @@ def spreadsheet_view(col: str, show_qty: str = "false", hide_sold: str = "false"
     products = get_products(col)
     table_rows = []
     for product in products:
-        info = extract_product_info(product["node"])
+        info = extract_product_info(product)
         if hide_sold_bool and not any(s["quantity"] > 0 for s in info["sizes"]):
             continue
         table_rows.append(create_table_row(info, show_quantity=show_qty_bool))
