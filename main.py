@@ -3,7 +3,12 @@ import requests
 import os
 from datetime import datetime, timezone
 
-app, rt = fast_app()
+# Pass an explicit secret_key so FastHTML doesn't try to create a .sesskey
+# file on import. Vercel's serverless filesystem is read-only (except /tmp),
+# so that write would crash the import and Vercel would report it as a missing
+# top-level "app". The app keeps no sensitive session state, so a fixed
+# fallback is fine; override via the SESSION_SECRET env var if desired.
+app, rt = fast_app(secret_key=os.getenv("SESSION_SECRET", "taiga-updates-session-key"))
 
 # Default collection shown when none is specified.
 DEFAULT_COLLECTION = "men-new"
